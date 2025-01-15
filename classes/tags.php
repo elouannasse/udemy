@@ -26,7 +26,7 @@ class Tags {
         $stmt = $this->db->prepare($query);
         $stmt->execute([':nom' => $nouveauNom, ':id_tag' => $id_tag]);
 
-        return $stmt->rowCount(); // Retourne le nombre de lignes affectées
+        return $stmt->rowCount(); 
     }
 
     // Supprimer un tag
