@@ -1,0 +1,196 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+}
+
+/* Navbar Styling */
+.navbar {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    background-color: #343a40;
+}
+
+.navbar-brand {
+    font-size: 3rem; /* Larger logo text */
+    color: white;
+    font-weight: bold;
+}
+
+.navbar-nav .nav-link {
+    color: white;
+    font-size: 1.5rem; /* Larger font size for links */
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #007bff;
+}
+
+.navbar-toggler-icon {
+    background-color: white;
+}
+
+.navbar .form-control {
+    border: none;
+    border-radius: 30px;
+    padding: 15px 25px;
+    width: 250px; /* Larger search box */
+}
+
+.navbar .btn-outline-light {
+    border-radius: 30px;
+    padding: 15px 25px;
+    margin-left: 10px;
+    font-size: 1.25rem;
+}
+
+/* Hero Section */
+.hero {
+    background: #007bff;
+    color: white;
+    text-align: center;
+    padding: 120px 0; /* Increased padding */
+}
+
+.hero h1 {
+    font-size: 4rem; /* Larger heading */
+    font-weight: bold;
+}
+
+.hero p {
+    font-size: 1.5rem; /* Larger text */
+    margin-bottom: 40px;
+}
+
+.hero .btn {
+    font-size: 1.25rem; /* Larger button */
+    padding: 15px 30px;
+    border-radius: 30px;
+}
+
+/* Featured Courses Section */
+.courses {
+    padding: 100px 0; /* Increased padding */
+    background-color: #f8f9fa;
+}
+
+.courses h2 {
+    font-size: 3rem; /* Larger title */
+    font-weight: bold;
+    margin-bottom: 50px;
+    text-align: center;
+}
+
+.card {
+    border: none;
+    border-radius: 15px; /* Larger card radius */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 40px;
+}
+
+.card:hover {
+    transform: translateY(-15px);
+}
+
+.card-img-top {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.card-body {
+    text-align: center;
+}
+
+.card-title {
+    font-size: 1.75rem; /* Larger title */
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.card-text {
+    font-size: 1.25rem; /* Larger text */
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.card .btn {
+    padding: 15px 25px;
+    border-radius: 30px;
+    font-size: 1.25rem; /* Larger button */
+}
+
+/* Footer Styling */
+footer {
+    background-color: #343a40;
+    color: white;
+    padding: 60px 0; /* Larger footer padding */
+    text-align: center;
+}
+
+footer p {
+    font-size: 1.25rem;
+}
+
+/* Media Queries for Responsiveness */
+
+/* Hero Section Text Resize for smaller screens */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 3rem;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+    }
+
+    .hero .btn {
+        font-size: 1.1rem;
+    }
+
+    .navbar .form-control {
+        width: 200px;
+    }
+
+    .navbar-nav .nav-link {
+        font-size: 1.2rem;
+    }
+
+    .courses h2 {
+        font-size: 2.5rem;
+    }
+
+    .card {
+        margin-bottom: 30px;
+    }
+
+    .card-title {
+        font-size: 1.6rem;
+    }
+
+
+    .card-text {
+        font-size: 1.1rem;
+    }
+}
+
+/* Adjust card images and content in smaller screens */
+@media (max-width: 576px) {
+    .card-img-top {
+        height: 180px;
+        object-fit: cover;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+}
