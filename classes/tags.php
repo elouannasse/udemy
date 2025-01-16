@@ -1,17 +1,16 @@
 <?php
+require_once 'database.php' ;
 
 class Tag {
-    // Encapsulation - propriétés privées
     private $id;
     private $nom;
     private $db;
 
     public function __construct($nom) {
         $this->nom = $nom;
-        $this->db = Database::getInstance()->getPDO(); 
+        $this->db = Database::getInstance()->getPDO();   
     }
 
-    // Méthode pour sauvegarder le tag
     public function save() {
         try {
             $sql = "INSERT INTO tags (nom) VALUES (:nom)";
@@ -29,7 +28,6 @@ class Tag {
         }
     }
 
-    // Méthode pour mettre à jour le tag
     public function update() {
         try {
             $sql = "UPDATE tags SET nom = :nom WHERE id = :id";
@@ -44,7 +42,6 @@ class Tag {
         }
     }
 
-    // Méthode pour supprimer le tag
     public function delete() {
         try {
             $sql = "DELETE FROM tags WHERE id = :id";
@@ -56,7 +53,6 @@ class Tag {
         }
     }
 
-    // Méthode pour récupérer les cours associés à ce tag
     public function getCours() {
         try {
             $sql = "SELECT c.* FROM cours c 
@@ -72,7 +68,6 @@ class Tag {
         }
     }
 
-    // Méthode statique pour récupérer tous les tags
     public static function getAll() {
         try {
             $db = Database::getInstance()->getPDO();
@@ -85,7 +80,6 @@ class Tag {
         }
     }
 
-    // Méthode pour insérer en masse des tags (util pour l'admin)
     public static function insertionMasse($tags) {
         try {
             $db = Database::getInstance()->getPDO();
@@ -107,12 +101,10 @@ class Tag {
         }
     }
 
-    // Getters et Setters
     public function getId() { return $this->id; }
     public function getNom() { return $this->nom; }
     public function setNom($nom) { $this->nom = $nom; }
 }
-$tag1 = new tag('smc') ;
- echo  $tag1->save() ;
-
+$tag1 = new Tag('smc') ;
+ echo $tag1->save() ;
 
