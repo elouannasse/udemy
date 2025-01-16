@@ -17,7 +17,7 @@ if (isset($_POST['submit'])) {
         $errorMessage = 'Veuillez remplir tous les champs.';
     } else {
         // Tenter de connecter l'utilisateur
-        $userRepo = new UserRepo();
+        $userRepo = new UserRepo(); 
         $user = $userRepo->login($email, $password);
 
         if ($user) {

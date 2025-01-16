@@ -1,30 +1,24 @@
 <?php
-// dashboard-admin.php
+require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/administrateur.php';
 
-// Inclure les fichiers nécessaires
-
-
-
-
-// Démarrer la session
 session_start();
 
-// Vérifier si l'utilisateur est connecté et est un administrateur
+// Vérification de l'authentification
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'administrateur') {
     header('Location: login.php');
     exit();
 }
 
-// Initialiser l'administrateur
 $admin = new Administrateur($_SESSION['nom'], $_SESSION['email'], '');
 
-// Récupérer les données pour le dashboard
+// Récupération des données
+$stats = $admin->getStatistiquesGlobales();
 $enseignantsEnAttente = $admin->getEnseignantsEnAttente();
-$utilisateurs = $admin->getAllUsers();
 $cours = $admin->afficherCours();
 $categories = $admin->getAllCategories();
 $tags = $admin->getAllTags();
-$stats = $admin->getStatistiquesGlobales();
+$utilisateurs = $admin->getAllUsers();
 ?>
 
 <!DOCTYPE html>
@@ -33,20 +27,20 @@ $stats = $admin->getStatistiquesGlobales();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Administrateur - Youdemy</title>
-
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
-    
-    <nav class="bg-white shadow-lg">
+    <!-- En-tête -->
+    <nav class="bg-white shadow-lg mb-8">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <span class="text-2xl font-bold text-indigo-600">Youdemy Admin</span>
+                    <span class="text-2xl font-bold text-green-600">Youdemy Admin</span>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-gray-700"><?php echo $_SESSION['nom']; ?></span>
+                <div class="flex items-center">
+                    <span class="mr-4"><?= htmlspecialchars($_SESSION['nom']) ?></span>
                     <a href="logout.php" class="text-red-600 hover:text-red-800">
                         <i class="fas fa-sign-out-alt"></i> Déconnexion
                     </a>
@@ -56,101 +50,187 @@ $stats = $admin->getStatistiquesGlobales();
     </nav>
 
     <!-- Contenu principal -->
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4">
+        <!-- Messages flash -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="mb-8 p-4 rounded-lg <?= $_SESSION['message_type'] === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?>">
+                <?php 
+                echo $_SESSION['message'];
+                unset($_SESSION['message'], $_SESSION['message_type']);
+                ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Statistiques globales -->
-        <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4">Statistiques globales</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Total cours -->
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-book fa-2x text-indigo-600"></i>
+                        <div class="p-3 rounded-full bg-green-100 text-green-600">
+                            <i class="fas fa-book fa-2x"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Cours</dt>
-                                <dd class="text-lg font-bold text-gray-900"><?php echo $stats['total_cours']; ?></dd>
-                            </dl>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Cours</p>
+                            <p class="text-2xl font-bold"><?= $stats['total_cours'] ?></p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+                <!-- Total étudiants -->
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-users fa-2x text-green-600"></i>
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                            <i class="fas fa-users fa-2x"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Étudiants</dt>
-                                <dd class="text-lg font-bold text-gray-900"><?php echo $stats['total_etudiants']; ?></dd>
-                            </dl>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Étudiants</p>
+                            <p class="text-2xl font-bold"><?= $stats['total_etudiants'] ?></p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+                <!-- Cours le plus populaire -->
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-chalkboard-teacher fa-2x text-blue-600"></i>
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                            <i class="fas fa-crown fa-2x"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Enseignants</dt>
-                                <dd class="text-lg font-bold text-gray-900"><?php echo $stats['total_enseignants']; ?></dd>
-                            </dl>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Cours le plus populaire</p>
+                            <p class="text-lg font-bold truncate">
+                                <?= htmlspecialchars($stats['cours_plus_populaire']['title']) ?>
+                            </p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+                <!-- Total enseignants -->
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-tags fa-2x text-purple-600"></i>
+                        <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                            <i class="fas fa-chalkboard-teacher fa-2x"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Tags</dt>
-                                <dd class="text-lg font-bold text-gray-900"><?php echo count($tags); ?></dd>
-                            </dl>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Enseignants</p>
+                            <p class="text-2xl font-bold"><?= $stats['total_enseignants'] ?></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Validation des enseignants en attente -->
-        <div class="bg-white shadow rounded-lg mb-8">
+        <!-- Graphiques statistiques -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Répartition par catégorie -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Répartition par catégorie</h3>
+                <canvas id="categoriesChart"></canvas>
+            </div>
+
+            <!-- Top 3 enseignants -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Top 3 Enseignants</h3>
+                <div class="space-y-4">
+                    <?php foreach ($stats['top_enseignants'] as $index => $enseignant): ?>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center mr-3">
+                            <?= $index + 1 ?>
+                        </div>
+                        <div>
+                            <p class="font-semibold"><?= htmlspecialchars($enseignant['nom']) ?></p>
+                            <p class="text-sm text-gray-600"><?= $enseignant['nombre_cours'] ?> cours</p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation des enseignants -->
+        <div class="bg-white rounded-lg shadow mb-8">
             <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Enseignants en attente de validation</h2>
+                <h2 class="text-xl font-bold mb-4">Validation des enseignants</h2>
+                <?php if (empty($enseignantsEnAttente)): ?>
+                    <p class="text-gray-500">Aucun enseignant en attente de validation</p>
+                <?php else: ?>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <?php foreach ($enseignantsEnAttente as $enseignant): ?>
+                                <tr>
+                                    <td class="px-6 py-4"><?= htmlspecialchars($enseignant['nom']) ?></td>
+                                    <td class="px-6 py-4"><?= htmlspecialchars($enseignant['email']) ?></td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="actions/valider_enseignant.php?id=<?= $enseignant['id'] ?>" 
+                                           class="text-green-600 hover:text-green-900 mr-4">Valider</a>
+                                        <a href="actions/refuser_enseignant.php?id=<?= $enseignant['id'] ?>" 
+                                           class="text-red-600 hover:text-red-900"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir refuser cet enseignant ?')">
+                                            Refuser
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Gestion des utilisateurs -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">Gestion des utilisateurs</h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date d'inscription</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <?php foreach ($enseignantsEnAttente as $enseignant): ?>
+                        <tbody class="divide-y divide-gray-200">
+                            <?php foreach ($utilisateurs as $user): ?>
+                            <?php if ($user['role'] !== 'administrateur'): ?>
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($enseignant['nom']); ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($enseignant['email']); ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap"><?php echo date('d/m/Y', strtotime($enseignant['date_creation'])); ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="actions/valider_enseignant.php?id=<?php echo $enseignant['id']; ?>" 
-                                       class="text-green-600 hover:text-green-900 mr-3">Valider</a>
-                                    <a href="actions/refuser_enseignant.php?id=<?php echo $enseignant['id']; ?>" 
-                                       class="text-red-600 hover:text-red-900">Refuser</a>
+                                <td class="px-6 py-4"><?= htmlspecialchars($user['nom']) ?></td>
+                                <td class="px-6 py-4"><?= htmlspecialchars($user['email']) ?></td>
+                                <td class="px-6 py-4"><?= htmlspecialchars($user['role']) ?></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        <?= $user['is_active'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                                        <?= $user['is_active'] ? 'Actif' : 'Suspendu' ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <?php if ($user['is_active']): ?>
+                                        <a href="actions/suspendre_utilisateur.php?id=<?= $user['id'] ?>" 
+                                           class="text-yellow-600 hover:text-yellow-900 mr-3">Suspendre</a>
+                                    <?php else: ?>
+                                        <a href="actions/activer_utilisateur.php?id=<?= $user['id'] ?>" 
+                                           class="text-green-600 hover:text-green-900 mr-3">Activer</a>
+                                    <?php endif; ?>
+                                    <a href="actions/supprimer_utilisateur.php?id=<?= $user['id'] ?>" 
+                                       class="text-red-600 hover:text-red-900"
+                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
+                                        Supprimer
+                                    </a>
                                 </td>
                             </tr>
+                            <?php endif; ?>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -158,99 +238,31 @@ $stats = $admin->getStatistiquesGlobales();
             </div>
         </div>
 
-        <!-- Gestion des Tags -->
-        <div class="bg-white shadow rounded-lg mb-8">
+        <!-- Gestion des tags -->
+        <div class="bg-white rounded-lg shadow mb-8">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Gestion des Tags</h2>
-                    <button onclick="document.getElementById('modal-tags').classList.remove('hidden')"
-                            class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-                        Ajouter des tags
+                    <h2 class="text-xl font-bold">Gestion des tags</h2>
+                    <button onclick="showModal('modal-tags')"
+                            class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                        <i class="fas fa-plus mr-2"></i>Ajouter des tags
                     </button>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($tags as $tag): ?>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">
-                        <?php echo htmlspecialchars($tag['nom']); ?>
-                        <a href="actions/supprimer_tag.php?id=<?php echo $tag['id_tag']; ?>" 
-                           class="ml-2 text-gray-400 hover:text-red-600">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Ajout Tags -->
-        <div id="modal-tags" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium">Ajouter des tags</h3>
-                    <button onclick="document.getElementById('modal-tags').classList.add('hidden')"
-                            class="text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <form action="actions/ajouter_tags.php" method="POST">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">
-                            Tags (séparés par des virgules)
-                        </label>
-                        <textarea name="tags" rows="4" 
-                                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                  required></textarea>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit" 
-                                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-                            Ajouter
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Top 3 Enseignants -->
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Top 3 Enseignants</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <?php foreach ($stats['top_enseignants'] as $index => $enseignant): ?>
-                    <div class="border rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
-                                <?php echo $index + 1; ?>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-lg font-medium text-gray-900">
-                                    <?php echo htmlspecialchars($enseignant['nom']); ?>
-                                </div>
-                                <div class="text-sm text-gray-500">
-                                    <?php echo $enseignant['nombre_cours']; ?> cours
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">
+                            <?= htmlspecialchars($tag['nom']) ?>
+                            <a href="actions/supprimer_tag.php?id=<?= $tag['id_tag'] ?>" 
+                               class="ml-2 text-gray-400 hover:text-red-600"
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </span>
                     <?php endforeach; ?>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        // Fonctions JavaScript pour la gestion dynamique
-        function confirmerAction(message) {
-            return confirm(message);
-        }
-
-        // Gestion des messages flash
-        <?php if (isset($_SESSION['message'])): ?>
-        alert("<?php echo $_SESSION['message']; ?>");
-        <?php unset($_SESSION['message']); ?>
-        <?php endif; ?>
-    </script>
-</body>
-</html>
+    <!-- Modal Ajout Tags -->
+    <div id="modal-tags" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50

@@ -1,238 +1,136 @@
 <?php
+require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/administrateur.php';
 
-class Administrateur extends Utilisateur {
-    // ID spécifique de la table administrateur
-    private $admin_id;
+session_start();
 
-    public function __construct($nom, $email, $password) {
-        parent::__construct($nom, $email, $password, 'administrateur');
-        $this->createAdminRecord();
-    }
-
-    private function createAdminRecord() {
-        try {
-            if ($this->id) {
-                $sql = "INSERT INTO administrateur (utilisateur_id) VALUES (:utilisateur_id)";
-                $stmt = $this->db->prepare($sql);
-                if ($stmt->execute([':utilisateur_id' => $this->id])) {
-                    $this->admin_id = $this->db->lastInsertId();
-                }
-            }
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-        }
-    }
-
-    // Validation des comptes enseignants
-    public function validerCompteEnseignant($enseignantId) {
-        try {
-            $sql = "UPDATE utilisateur u 
-                    JOIN enseignant e ON u.id = e.utilisateur_id 
-                    SET u.is_active = 1 
-                    WHERE e.id = :enseignant_id";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':enseignant_id' => $enseignantId]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    // Gestion des utilisateurs
-    public function suspendreUtilisateur($utilisateurId) {
-        try {
-            $sql = "UPDATE utilisateur SET is_active = 0 WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $utilisateurId]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    public function activerUtilisateur($utilisateurId) {
-        try {
-            $sql = "UPDATE utilisateur SET is_active = 1 WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $utilisateurId]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    public function supprimerUtilisateur($utilisateurId) {
-        try {
-            $this->db->beginTransaction();
-
-            // Récupérer le rôle de l'utilisateur
-            $sql = "SELECT role FROM utilisateur WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $utilisateurId]);
-            $role = $stmt->fetchColumn();
-
-            // Supprimer de la table spécifique selon le rôle
-            switch ($role) {
-                case 'enseignant':
-                    $sql = "DELETE FROM enseignant WHERE utilisateur_id = :id";
-                    break;
-                case 'etudiant':
-                    $sql = "DELETE FROM etudiant WHERE utilisateur_id = :id";
-                    break;
-                case 'administrateur':
-                    if ($utilisateurId == $this->id) {
-                        throw new Exception("Un administrateur ne peut pas se supprimer lui-même");
-                    }
-                    $sql = "DELETE FROM administrateur WHERE utilisateur_id = :id";
-                    break;
-            }
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $utilisateurId]);
-
-            // Supprimer de la table utilisateur
-            $sql = "DELETE FROM utilisateur WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $utilisateurId]);
-
-            $this->db->commit();
-            return true;
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    // Gestion des catégories
-    public function ajouterCategorie($nom) {
-        try {
-            $sql = "INSERT INTO categorie (nom) VALUES (:nom)";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':nom' => $nom]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    public function modifierCategorie($categorieId, $nouveauNom) {
-        try {
-            $sql = "UPDATE categorie SET nom = :nom WHERE id_categorie = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':nom' => $nouveauNom,
-                ':id' => $categorieId
-            ]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    public function supprimerCategorie($categorieId) {
-        try {
-            $sql = "DELETE FROM categorie WHERE id_categorie = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $categorieId]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    // Gestion des tags
-    public function insertionMasseTags($tags) {
-        try {
-            $this->db->beginTransaction();
-
-            $sql = "INSERT INTO tags (nom) VALUES (:nom)";
-            $stmt = $this->db->prepare($sql);
-
-            foreach ($tags as $nom) {
-                $stmt->execute([':nom' => $nom]);
-            }
-
-            $this->db->commit();
-            return true;
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    // Statistiques globales
-    public function getStatistiquesGlobales() {
-        try {
-            $stats = [];
-            
-            // Nombre total de cours
-            $sql1 = "SELECT COUNT(*) as total FROM cours";
-            $stmt = $this->db->query($sql1);
-            $stats['total_cours'] = $stmt->fetchColumn();
-            
-            // Répartition des cours par catégorie
-            $sql2 = "SELECT c.nom, COUNT(co.id) as count 
-                     FROM categorie c 
-                     LEFT JOIN cours co ON c.id_categorie = co.categorie_id 
-                     GROUP BY c.id_categorie";
-            $stmt = $this->db->query($sql2);
-            $stats['cours_par_categorie'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Cours avec le plus d'étudiants
-            $sql3 = "SELECT c.title, COUNT(i.etudiant_id) as nombre_etudiants 
-                     FROM cours c 
-                     LEFT JOIN inscription i ON c.id = i.cours_id 
-                     GROUP BY c.id 
-                     ORDER BY nombre_etudiants DESC 
-                     LIMIT 1";
-            $stmt = $this->db->query($sql3);
-            $stats['cours_plus_populaire'] = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Top 3 des enseignants
-            $sql4 = "SELECT u.nom, COUNT(c.id) as nombre_cours 
-                     FROM utilisateur u 
-                     JOIN enseignant e ON u.id = e.utilisateur_id 
-                     JOIN cours c ON e.id = c.enseignant_id 
-                     GROUP BY e.id 
-                     ORDER BY nombre_cours DESC 
-                     LIMIT 3";
-            $stmt = $this->db->query($sql4);
-            $stats['top_enseignants'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            return $stats;
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return [];
-        }
-    }
-
-    // Implementation des méthodes abstraites
-    public function getPermissions() {
-        return [
-            'gerer_utilisateurs',
-            'gerer_cours',
-            'gerer_categories',
-            'gerer_tags',
-            'voir_statistiques'
-        ];
-    }
-
-    public function afficherCours() {
-        try {
-            $sql = "SELECT c.*, u.nom as enseignant_nom, cat.nom as categorie_nom 
-                    FROM cours c 
-                    JOIN enseignant e ON c.enseignant_id = e.id 
-                    JOIN utilisateur u ON e.utilisateur_id = u.id 
-                    LEFT JOIN categorie cat ON c.categorie_id = cat.id_categorie";
-            
-            $stmt = $this->db->query($sql);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return [];
-        }
-    }
+// Vérification de l'authentification
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'administrateur') {
+    header('Location: login.php');
+    exit();
 }
+
+$admin = new Administrateur($_SESSION['nom'], $_SESSION['email'], '');
+$stats = $admin->getStatistiquesGlobales();
+$enseignantsEnAttente = $admin->getEnseignantsEnAttente();
+$tags = $admin->getAllTags();
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrateur - Youdemy</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Menu latéral -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-green-600 text-white">
+        <div class="flex items-center justify-center h-16 border-b border-green-500">
+            <span class="text-2xl font-bold">Youdemy Admin</span>
+        </div>
+        <nav class="mt-6">
+            <a href="#dashboard" class="block py-3 px-4 text-white hover:bg-green-700 active-nav">
+                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+            </a>
+            <a href="#enseignants" class="block py-3 px-4 text-white hover:bg-green-700">
+                <i class="fas fa-chalkboard-teacher mr-2"></i> Enseignants
+            </a>
+            <a href="#cours" class="block py-3 px-4 text-white hover:bg-green-700">
+                <i class="fas fa-book mr-2"></i> Cours
+            </a>
+            <a href="#categories" class="block py-3 px-4 text-white hover:bg-green-700">
+                <i class="fas fa-list mr-2"></i> Catégories
+            </a>
+            <a href="#tags" class="block py-3 px-4 text-white hover:bg-green-700">
+                <i class="fas fa-tags mr-2"></i> Tags
+            </a>
+            <a href="#statistiques" class="block py-3 px-4 text-white hover:bg-green-700">
+                <i class="fas fa-chart-bar mr-2"></i> Statistiques
+            </a>
+        </nav>
+    </div>
+
+    <!-- Contenu principal -->
+    <div class="ml-64">
+        <!-- En-tête -->
+        <header class="bg-white shadow h-16 flex items-center justify-between px-6">
+            <div class="flex items-center">
+                <span class="text-xl font-semibold text-gray-700">Dashboard</span>
+            </div>
+            <div class="flex items-center">
+                <span class="mr-4 text-gray-600"><?php echo htmlspecialchars($_SESSION['nom']); ?></span>
+                <a href="logout.php" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+        </header>
+
+        <!-- Contenu -->
+        <main class="p-6">
+            <!-- Statistiques générales -->
+            <div id="dashboard" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-500">
+                            <i class="fas fa-graduation-cap fa-2x"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Total Cours</p>
+                            <p class="text-2xl font-bold"><?php echo $stats['total_cours']; ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-500">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Total Étudiants</p>
+                            <p class="text-2xl font-bold"><?php echo $stats['total_etudiants']; ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-purple-100 text-purple-500">
+                            <i class="fas fa-chalkboard-teacher fa-2x"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Total Enseignants</p>
+                            <p class="text-2xl font-bold"><?php echo $stats['total_enseignants']; ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-500">
+                            <i class="fas fa-tag fa-2x"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Total Tags</p>
+                            <p class="text-2xl font-bold"><?php echo count($tags); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Les sections suivantes seront chargées dynamiquement via AJAX -->
+            <div id="content-area">
+                <!-- Le contenu sera chargé ici -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

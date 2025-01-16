@@ -1,7 +1,7 @@
 <?php
 
 abstract class Utilisateur {
-    // Encapsulation avec propriétés protégées
+    
     protected $id;
     protected $nom;
     protected $email;
@@ -10,7 +10,7 @@ abstract class Utilisateur {
     protected $isActive;
     protected $db;
 
-    // Constructeur
+    
     public function __construct($nom, $email, $password, $role) {
         $this->nom = $nom;
         $this->email = $email;
@@ -20,11 +20,11 @@ abstract class Utilisateur {
         $this->db = Database::getInstance()->getPDO();
     }
 
-    // Méthodes abstraites pour le polymorphisme
-    abstract public function getPermissions();
+    
+    abstract public function getPermissions(); 
     abstract public function afficherCours();
 
-    // Méthode d'authentification
+    
     public function authentifier($email, $password) {
         try {
             $sql = "SELECT * FROM users WHERE email = :email AND is_active = 1";
@@ -42,7 +42,7 @@ abstract class Utilisateur {
         }
     }
 
-    // Méthode d'enregistrement
+    
     public function save() {
         try {
             $sql = "INSERT INTO users (nom, email, password, role, is_active) 
@@ -68,7 +68,7 @@ abstract class Utilisateur {
         }
     }
 
-    // Getters et Setters
+    
     public function getId() { 
         return $this->id; 
     }

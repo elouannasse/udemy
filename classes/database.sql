@@ -29,7 +29,7 @@ CREATE TABLE etudiant (
 
 -- Create Categorie table
 CREATE TABLE categorie (
-    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,   
     nom VARCHAR(100) NOT NULL
 );
 

@@ -1,33 +1,19 @@
 <?php
-
 class Database {
     private $pdo;
 
+    
     public function __construct() {
-        // Connexion à la base de données
-        $dsn = 'mysql:host=localhost;dbname=youdemy;charset=utf8';
-        $username = 'root';
-        $password = '';
-
         try {
-            $this->pdo = new PDO($dsn, $username, $password);
+            $this->pdo = new PDO('mysql:host=localhost;dbname=youdemy', 'username', 'password');
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            die("Erreur de connexion à la base de données : " . $e->getMessage());
+            die("Database connection failed: " . $e->getMessage());
         }
     }
 
-    
-    public function fetch($query, $params = []) {
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetch(PDO::FETCH_ASSOC); 
-    }
-
-    
-    public function execute($query, $params = []) {
-        $stmt = $this->pdo->prepare($query);
-        return $stmt->execute($params); 
+    public function getConnection() {
+        return $this->pdo;
     }
 }
 ?>

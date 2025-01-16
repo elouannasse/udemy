@@ -17,9 +17,14 @@ if (isset($_POST['submit'])) {
     // Valider les champs
     if (empty($nom) || empty($email) || empty($password) || empty($role)) {
         $errorMessage = 'Veuillez remplir tous les champs, y compris le rôle.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errorMessage = 'Veuillez entrer une adresse email valide.';
+    } elseif (strlen($password) < 8) {
+        $errorMessage = 'Le mot de passe doit contenir au moins 8 caractères.';
     } else {
         // Vérifier si l'email existe déjà
-        $userRepo = new UserRepo();
+        $database = new Database();
+        $userRepo = new UserRepo($database->getConnection());
         if ($userRepo->emailExists($email)) {
             $errorMessage = 'Cet email est déjà utilisé.';
         } else {

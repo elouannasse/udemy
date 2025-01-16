@@ -104,7 +104,7 @@ class Tag {
     public function getId() { return $this->id; }
     public function getNom() { return $this->nom; }
     public function setNom($nom) { $this->nom = $nom; }
-}
-$tag1 = new Tag('smc') ;
- echo $tag1->save() ;
+} 
+// $tag1 = new Tag ('statistique') ;
+//  echo $tag1->save(); 
 
