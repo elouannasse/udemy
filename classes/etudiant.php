@@ -1,13 +1,14 @@
 <?php
-// src/Models/User/Etudiant.php
 
 class Etudiant extends Utilisateur {
+    // Encapsulation
     private $coursInscrits = [];
 
     public function __construct($nom, $email, $password) {
         parent::__construct($nom, $email, $password, 'etudiant');
     }
 
+    // Implementation de la méthode abstraite (Polymorphisme)
     public function getPermissions() {
         return [
             'consulter_cours',
@@ -16,40 +17,8 @@ class Etudiant extends Utilisateur {
         ];
     }
 
-    // Inscription à un cours
-    public function inscriptionCours($coursId) {
-        try {
-            // Vérifier si déjà inscrit
-            $sqlCheck = "SELECT COUNT(*) as count FROM inscriptions 
-                        WHERE etudiant_id = :etudiant_id AND cours_id = :cours_id";
-            $stmt = $this->db->prepare($sqlCheck);
-            $stmt->execute([
-                ':etudiant_id' => $this->id,
-                ':cours_id' => $coursId
-            ]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($result['count'] > 0) {
-                return false; // Déjà inscrit
-            }
-
-            // Procéder à l'inscription
-            $sql = "INSERT INTO inscriptions (etudiant_id, cours_id, date_inscription) 
-                    VALUES (:etudiant_id, :cours_id, NOW())";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':etudiant_id' => $this->id,
-                ':cours_id' => $coursId
-            ]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    // Récupérer les cours de l'étudiant
-    public function getCoursInscrits() {
+    // Implementation de la méthode abstraite (Polymorphisme)
+    public function afficherCours() {
         try {
             $sql = "SELECT c.*, u.nom as enseignant_nom 
                     FROM cours c 
@@ -66,7 +35,29 @@ class Etudiant extends Utilisateur {
         }
     }
 
-    // Se désinscrire d'un cours
+    // Méthode d'inscription à un cours
+    public function inscriptionCours($coursId) {
+        try {
+            // Vérifier si déjà inscrit
+            if ($this->estDejaInscrit($coursId)) {
+                return false;
+            }
+
+            $sql = "INSERT INTO inscriptions (etudiant_id, cours_id, date_inscription) 
+                    VALUES (:etudiant_id, :cours_id, NOW())";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':etudiant_id' => $this->id,
+                ':cours_id' => $coursId
+            ]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    // Méthode de désinscription
     public function desinscriptionCours($coursId) {
         try {
             $sql = "DELETE FROM inscriptions 
@@ -83,7 +74,21 @@ class Etudiant extends Utilisateur {
         }
     }
 
-    // Obtenir les statistiques de l'étudiant
+    // Vérification d'inscription (méthode privée - encapsulation)
+    private function estDejaInscrit($coursId) {
+        $sql = "SELECT COUNT(*) FROM inscriptions 
+                WHERE etudiant_id = :etudiant_id AND cours_id = :cours_id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':etudiant_id' => $this->id,
+            ':cours_id' => $coursId
+        ]);
+        
+        return $stmt->fetchColumn() > 0;
+    }
+
+    // Méthode pour obtenir les statistiques
     public function getStatistiques() {
         try {
             $stats = [];

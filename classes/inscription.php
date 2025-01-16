@@ -12,6 +12,6 @@ class Inscription {
     }
 
     public function getDateInscription() {
-        return $this->dateInscription;
+        return $this->dateInscription; 
     }
 }

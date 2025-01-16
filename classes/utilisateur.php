@@ -1,8 +1,7 @@
 <?php
-// src/Models/User/Utilisateur.php
 
 abstract class Utilisateur {
-    // Propriétés protégées pour l'encapsulation
+    // Encapsulation avec propriétés protégées
     protected $id;
     protected $nom;
     protected $email;
@@ -11,6 +10,7 @@ abstract class Utilisateur {
     protected $isActive;
     protected $db;
 
+    // Constructeur
     public function __construct($nom, $email, $password, $role) {
         $this->nom = $nom;
         $this->email = $email;
@@ -20,37 +20,29 @@ abstract class Utilisateur {
         $this->db = Database::getInstance()->getPDO();
     }
 
-    // Méthode abstraite pour le polymorphisme
+    // Méthodes abstraites pour le polymorphisme
     abstract public function getPermissions();
+    abstract public function afficherCours();
 
     // Méthode d'authentification
-    public static function authentifier($email, $password) {
-        $db = Database::getInstance()->getPDO();
+    public function authentifier($email, $password) {
         try {
             $sql = "SELECT * FROM users WHERE email = :email AND is_active = 1";
-            $stmt = $db->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user && password_verify($password, $user['password'])) {
-                // Retourner l'instance appropriée selon le rôle
-                switch ($user['role']) {
-                    case 'etudiant':
-                        return new Etudiant($user['nom'], $user['email'], '');
-                    case 'enseignant':
-                        return new Enseignant($user['nom'], $user['email'], '');
-                    case 'administrateur':
-                        return new Administrateur($user['nom'], $user['email'], '');
-                }
+                return true;
             }
-            return null;
+            return false;
         } catch (PDOException $e) {
             error_log($e->getMessage());
-            return null;
+            return false;
         }
     }
 
-    // Méthode pour sauvegarder l'utilisateur
+    // Méthode d'enregistrement
     public function save() {
         try {
             $sql = "INSERT INTO users (nom, email, password, role, is_active) 
@@ -76,32 +68,35 @@ abstract class Utilisateur {
         }
     }
 
-    // Méthode pour mettre à jour le profil
-    public function updateProfile($data) {
-        try {
-            $sql = "UPDATE users 
-                    SET nom = :nom, email = :email 
-                    WHERE id = :id";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':nom' => $data['nom'] ?? $this->nom,
-                ':email' => $data['email'] ?? $this->email,
-                ':id' => $this->id
-            ]);
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
+    // Getters et Setters
+    public function getId() { 
+        return $this->id; 
     }
 
-    // Getters and Setters
-    public function getId() { return $this->id; }
-    public function getNom() { return $this->nom; }
-    public function getEmail() { return $this->email; }
-    public function getRole() { return $this->role; }
-    public function isActive() { return $this->isActive; }
-    
+    public function getNom() { 
+        return $this->nom; 
+    }
+
+    public function setNom($nom) { 
+        $this->nom = $nom; 
+    }
+
+    public function getEmail() { 
+        return $this->email; 
+    }
+
+    public function setEmail($email) { 
+        $this->email = $email; 
+    }
+
+    public function getRole() { 
+        return $this->role; 
+    }
+
+    public function isActive() { 
+        return $this->isActive; 
+    }
+
     public function setActive($active) {
         $this->isActive = $active;
         try {

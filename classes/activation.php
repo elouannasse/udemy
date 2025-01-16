@@ -14,4 +14,4 @@ if (isset($_GET['token'])) {
         echo "Le token d'activation est invalide ou a expiré.";
     }
 }
-?>
+?> 
