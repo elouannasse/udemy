@@ -1,6 +1,5 @@
 <?php
 require_once "database.php" ;        
-require_once "Database.php";
 
 class Categorie {
     private $id;
@@ -77,10 +76,8 @@ class Categorie {
     public function getId() { return $this->id; }
     public function getNom() { return $this->nom; }
     public function setNom($nom) { $this->nom = $nom; }
-}
+} 
  
-// $categorie1 = new Categorie('informatique');
-//  echo $categorie1->save(); 
 
  
 

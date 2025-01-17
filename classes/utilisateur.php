@@ -1,114 +1,140 @@
 <?php
-
-abstract class Utilisateur {
-    
+class Utilisateur {
     protected $id;
     protected $nom;
     protected $email;
     protected $password;
     protected $role;
-    protected $isActive;
     protected $db;
 
-    
     public function __construct($nom, $email, $password, $role) {
+        try {
+            $this->db = new PDO(
+                "mysql:host=localhost;dbname=youdemy", 
+                "root",  
+                ""      
+            );
+            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch(PDOException $e) {
+            die("Erreur de connexion : " . $e->getMessage());
+        }
+
         $this->nom = $nom;
         $this->email = $email;
         $this->password = password_hash($password, PASSWORD_DEFAULT);
         $this->role = $role;
-        $this->isActive = false;
-        $this->db = Database::getInstance()->getPDO();
+        
+        $this->createUser();
     }
 
-    
-    abstract public function getPermissions(); 
-    abstract public function afficherCours();
-
-    
-    public function authentifier($email, $password) {
+    private function createUser() {
         try {
-            $sql = "SELECT * FROM users WHERE email = :email AND is_active = 1";
+            $sql = "INSERT INTO utilisateur (nom, email, password, role) 
+                    VALUES (:nom, :email, :password, :role)";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':email' => $email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user && password_verify($password, $user['password'])) {
-                return true;
-            }
-            return false;
-        } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    
-    public function save() {
-        try {
-            $sql = "INSERT INTO users (nom, email, password, role, is_active) 
-                    VALUES (:nom, :email, :password, :role, :is_active)";
-            
-            $stmt = $this->db->prepare($sql);
-            $success = $stmt->execute([
+            if ($stmt->execute([
                 ':nom' => $this->nom,
                 ':email' => $this->email,
                 ':password' => $this->password,
-                ':role' => $this->role,
-                ':is_active' => $this->isActive
-            ]);
-
-            if ($success) {
+                ':role' => $this->role
+            ])) {
                 $this->id = $this->db->lastInsertId();
-                return true;
             }
-            return false;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
+            die("Erreur lors de la création de l'utilisateur : " . $e->getMessage());
+        }
+    }
+
+    // Getters
+    public function getId() {
+        return $this->id;
+    }
+
+    public function getNom() {
+        return $this->nom;
+    }
+
+    public function getEmail() {
+        return $this->email;
+    }
+
+    public function getRole() {
+        return $this->role;
+    }
+
+    // Setters
+    public function setNom($nom) {
+        $this->nom = $nom;
+        $this->updateUser();
+    }
+
+    public function setEmail($email) {
+        $this->email = $email;
+        $this->updateUser();
+    }
+
+    public function setPassword($password) {
+        $this->password = password_hash($password, PASSWORD_DEFAULT);
+        $this->updateUser();
+    }
+
+    // Méthode de mise à jour
+    protected function updateUser() {
+        try {
+            $sql = "UPDATE utilisateur 
+                    SET nom = :nom, 
+                        email = :email, 
+                        password = :password 
+                    WHERE id = :id";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':nom' => $this->nom,
+                ':email' => $this->email,
+                ':password' => $this->password,
+                ':id' => $this->id
+            ]);
+        } catch (PDOException $e) {
             return false;
         }
     }
 
-    
-    public function getId() { 
-        return $this->id; 
-    }
-
-    public function getNom() { 
-        return $this->nom; 
-    }
-
-    public function setNom($nom) { 
-        $this->nom = $nom; 
-    }
-
-    public function getEmail() { 
-        return $this->email; 
-    }
-
-    public function setEmail($email) { 
-        $this->email = $email; 
-    }
-
-    public function getRole() { 
-        return $this->role; 
-    }
-
-    public function isActive() { 
-        return $this->isActive; 
-    }
-
-    public function setActive($active) {
-        $this->isActive = $active;
+    public function deleteUser() {
         try {
-            $sql = "UPDATE users SET is_active = :is_active WHERE id = :id";
+            $sql = "DELETE FROM utilisateur WHERE id = :id";
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':is_active' => $active,
-                ':id' => $this->id
-            ]);
+            return $stmt->execute([':id' => $this->id]);
         } catch (PDOException $e) {
-            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    public function verifyPassword($password) {
+        return password_verify($password, $this->password);
+    }
+
+    public static function login($email, $password) {
+        try {
+            $db = new PDO(
+                "mysql:host=localhost;dbname=youdemy", 
+                "root", 
+                ""
+            );
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "SELECT * FROM utilisateur WHERE email = :email";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([':email' => $email]);
+            
+            if ($user = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (password_verify($password, $user['password'])) {
+                    return $user;
+                }
+            }
+            return false;
+        } catch (PDOException $e) {
             return false;
         }
     }
 }
+?>

@@ -1,28 +1,102 @@
-<?php
+<?php 
+require_once 'utilisateur.php';
 
 class Enseignant extends Utilisateur {
-    
     private $enseignant_id;
-
-    
+    protected $db;
 
     public function __construct($nom, $email, $password) {
-        parent::__construct($nom, $email, $password, 'enseignant'); 
+        try {
+            $this->db = new PDO(
+                "mysql:host=localhost;dbname=youdemy", 
+                "root",  
+                ""      
+            );
+            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch(PDOException $e) {
+            die("Erreur de connexion : " . $e->getMessage());
+        }
+
+        parent::__construct($nom, $email, $password, 'enseignant');
         $this->createEnseignantRecord();
     }
 
-    
-    private function createEnseignantRecord() { 
-        try {
-            if ($this->id) {
-                $sql = "INSERT INTO enseignant (utilisateur_id) VALUES (:utilisateur_id)";
-                $stmt = $this->db->prepare($sql);
-                if ($stmt->execute([':utilisateur_id' => $this->id])) {
-                    $this->enseignant_id = $this->db->lastInsertId();
-                }
+    public function getPermissions() {
+        return [
+            'creer_cours' => true,
+            'modifier_cours' => true,
+            'supprimer_cours' => true,
+            'voir_statistiques' => true
+        ];
+    }
+
+    private function createEnseignantRecord() {
+        if ($this->id) {
+            $sql = "INSERT INTO enseignant (utilisateur_id) VALUES (:utilisateur_id)";
+            $stmt = $this->db->prepare($sql);
+            if ($stmt->execute([':utilisateur_id' => $this->id])) {
+                $this->enseignant_id = $this->db->lastInsertId();
             }
+        }
+    }
+
+    public function creerCours($donnees) {
+        try {
+            $sql = "INSERT INTO cours (titre, description, contenu, categorie_id, enseignant_id) 
+                    VALUES (:titre, :description, :contenu, :categorie_id, :enseignant_id)";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':titre' => $donnees['titre'],
+                ':description' => $donnees['description'],
+                ':contenu' => $donnees['contenu'],
+                ':categorie_id' => $donnees['categorie_id'],
+                ':enseignant_id' => $this->enseignant_id
+            ]);
+
+            return $this->db->lastInsertId();
         } catch (PDOException $e) {
-            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    public function modifierCours($coursId, $donnees) {
+        try {
+            $sql = "UPDATE cours 
+                    SET titre = :titre, 
+                        description = :description, 
+                        contenu = :contenu,
+                        categorie_id = :categorie_id 
+                    WHERE id = :id AND enseignant_id = :enseignant_id";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':titre' => $donnees['titre'],
+                ':description' => $donnees['description'],
+                ':contenu' => $donnees['contenu'],
+                ':categorie_id' => $donnees['categorie_id'],
+                ':id' => $coursId,
+                ':enseignant_id' => $this->enseignant_id
+            ]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function supprimerCours($coursId) {
+        try {
+            $sql1 = "DELETE FROM inscription WHERE cours_id = :cours_id";
+            $stmt = $this->db->prepare($sql1);
+            $stmt->execute([':cours_id' => $coursId]);
+
+            $sql2 = "DELETE FROM cours WHERE id = :id AND enseignant_id = :enseignant_id";
+            $stmt = $this->db->prepare($sql2);
+            return $stmt->execute([
+                ':id' => $coursId,
+                ':enseignant_id' => $this->enseignant_id
+            ]);
+        } catch (PDOException $e) {
+            return false;
         }
     }
 
@@ -38,157 +112,19 @@ class Enseignant extends Utilisateur {
             $stmt->execute([':enseignant_id' => $this->enseignant_id]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log($e->getMessage());
             return [];
         }
     }
 
-    
-    public function creerCours($donnees) {
-        try {
-            $this->db->beginTransaction();
-
-            $sql = "INSERT INTO cours (title, description, contenu, categorie_id, enseignant_id) 
-                    VALUES (:titre, :description, :contenu, :categorie_id, :enseignant_id)";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':titre' => $donnees['titre'],
-                ':description' => $donnees['description'],
-                ':contenu' => $donnees['contenu'],
-                ':categorie_id' => $donnees['categorie_id'],
-                ':enseignant_id' => $this->enseignant_id
-            ]);
-
-            $coursId = $this->db->lastInsertId();
-
-            if (!empty($donnees['tags'])) {
-                $this->ajouterTagsCours($coursId, $donnees['tags']);
-            }
-
-            $this->db->commit();
-            return $coursId;
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    
-    public function modifierCours($coursId, $donnees) {
-        try {
-            if (!$this->estProprietaireCours($coursId)) {
-                return false;
-            }
-
-            $this->db->beginTransaction();
-
-            $sql = "UPDATE cours 
-                    SET title = :titre, 
-                        description = :description, 
-                        contenu = :contenu,
-                        categorie_id = :categorie_id 
-                    WHERE id = :id AND enseignant_id = :enseignant_id";
-            
-            $stmt = $this->db->prepare($sql);
-            $success = $stmt->execute([
-                ':titre' => $donnees['titre'],
-                ':description' => $donnees['description'],
-                ':contenu' => $donnees['contenu'],
-                ':categorie_id' => $donnees['categorie_id'],
-                ':id' => $coursId,
-                ':enseignant_id' => $this->enseignant_id
-            ]);
-
-            if ($success && isset($donnees['tags'])) {
-                $this->mettreAJourTags($coursId, $donnees['tags']);
-            }
-
-            $this->db->commit();
-            return $success;
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-
-    public function supprimerCours($coursId) {
-        try {
-            if (!$this->estProprietaireCours($coursId)) {
-                return false;
-            }
-
-            $this->db->beginTransaction();
-
-            
-            $sql1 = "DELETE FROM inscription WHERE cours_id = :cours_id";
-            $stmt = $this->db->prepare($sql1);
-            $stmt->execute([':cours_id' => $coursId]);
-
-        
-            $sql2 = "DELETE FROM cours_tags WHERE cours_id = :cours_id";
-            $stmt = $this->db->prepare($sql2);
-            $stmt->execute([':cours_id' => $coursId]);
-
-            
-            $sql3 = "DELETE FROM cours WHERE id = :id AND enseignant_id = :enseignant_id";
-            $stmt = $this->db->prepare($sql3);
-            $success = $stmt->execute([
-                ':id' => $coursId,
-                ':enseignant_id' => $this->enseignant_id
-            ]);
-
-            $this->db->commit();
-            return $success;
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    
-    private function estProprietaireCours($coursId) {
-        $sql = "SELECT COUNT(*) FROM cours 
-                WHERE id = :id AND enseignant_id = :enseignant_id";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':id' => $coursId,
-            ':enseignant_id' => $this->enseignant_id
-        ]);
-        
-        return $stmt->fetchColumn() > 0;
-    }
-
-    
-    private function ajouterTagsCours($coursId, $tags) {
-        $sql = "INSERT INTO cours_tags (cours_id, tag_id) VALUES (:cours_id, :tag_id)";
-        $stmt = $this->db->prepare($sql);
-
-        foreach ($tags as $tagId) {
-            $stmt->execute([
-                ':cours_id' => $coursId,
-                ':tag_id' => $tagId
-            ]);
-        }
-    }
-
-    
     public function getStatistiques() {
         try {
             $stats = [];
             
-            // Nombre total de cours
             $sql1 = "SELECT COUNT(*) as total FROM cours WHERE enseignant_id = :id";
             $stmt = $this->db->prepare($sql1);
             $stmt->execute([':id' => $this->enseignant_id]);
             $stats['total_cours'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
             
-            // Nombre total d'étudiants inscrits
             $sql2 = "SELECT COUNT(DISTINCT i.etudiant_id) as total 
                      FROM cours c 
                      JOIN inscription i ON c.id = i.cours_id 
@@ -199,29 +135,25 @@ class Enseignant extends Utilisateur {
 
             return $stats;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
             return [];
         }
     }
-
-    // Getters et Setters
-    public function getEnseignantId() {
-        return $this->enseignant_id;
-    }
-    
-    public function getSpecialite() {
-        return $this->specialite;
-    }
-
-    public function getBiographie() {
-        return $this->biographie;
-    }
-
-    public function setSpecialite($specialite) {
-        $this->specialite = $specialite;
-    }
-
-    public function setBiographie($biographie) {
-        $this->biographie = $biographie;
-    }
 }
+
+
+$enseignant = new Enseignant('zakaria', 'zakarianew@gmail.com', 'zakaria123'); 
+$donnees = [
+    'titre' => 'introduction a php',
+    'description' => 'aprener les bases de php',
+    'contenu' => 'contenue du cours PHP...',
+    'categorie_id' => 1
+];
+
+$resultat = $enseignant->creerCours($donnees);
+if ($resultat) {
+    echo "Cours créé avec succès. ID: " . $resultat;
+} else {
+    echo "Erreur lors de la création du cours";
+}
+
+?>
