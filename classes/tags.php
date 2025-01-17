@@ -1,5 +1,5 @@
 <?php
-require_once 'database.php' ;
+require_once 'Database.php';
 
 class Tag {
     private $id;
@@ -8,7 +8,7 @@ class Tag {
 
     public function __construct($nom) {
         $this->nom = $nom;
-        $this->db = Database::getInstance()->getPDO();   
+        $this->db = (new Database())->getConnection(); 
     }
 
     public function save() {
@@ -70,7 +70,7 @@ class Tag {
 
     public static function getAll() {
         try {
-            $db = Database::getInstance()->getPDO();
+            $db = (new Database())->getConnection(); 
             $sql = "SELECT * FROM tags ORDER BY nom";
             $stmt = $db->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -82,7 +82,7 @@ class Tag {
 
     public static function insertionMasse($tags) {
         try {
-            $db = Database::getInstance()->getPDO();
+            $db = (new Database())->getConnection(); 
             $db->beginTransaction();
 
             $sql = "INSERT INTO tags (nom) VALUES (:nom)";
@@ -104,7 +104,8 @@ class Tag {
     public function getId() { return $this->id; }
     public function getNom() { return $this->nom; }
     public function setNom($nom) { $this->nom = $nom; }
-} 
-// $tag1 = new Tag ('statistique') ;
-//  echo $tag1->save(); 
+}
 
+$tag1 = new Tag('#mathimatique') ;
+ echo $tag1->save() ;
+?>

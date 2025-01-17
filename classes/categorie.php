@@ -1,15 +1,15 @@
 <?php
 require_once "database.php" ;        
+require_once "Database.php";
 
 class Categorie {
     private $id;
     private $nom;
     private $db;
 
-    
     public function __construct($nom) {
         $this->nom = $nom;
-        $this->db = Database::getInstance()->getPDO(); 
+        $this->db = (new Database())->getConnection(); 
     }
 
     
@@ -79,7 +79,9 @@ class Categorie {
     public function setNom($nom) { $this->nom = $nom; }
 }
  
-$
+// $categorie1 = new Categorie('informatique');
+//  echo $categorie1->save(); 
+
  
 
 

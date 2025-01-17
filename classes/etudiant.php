@@ -1,14 +1,14 @@
 <?php
 
 class Etudiant extends Utilisateur {
-    // Encapsulation
+
     private $coursInscrits = [];
 
     public function __construct($nom, $email, $password) {
-        parent::__construct($nom, $email, $password, 'etudiant');
+        parent::__construct($nom, $email, $password, 'etudiant');  
     }
 
-    // Implementation de la méthode abstraite (Polymorphisme)
+    
     public function getPermissions() {
         return [
             'consulter_cours',
@@ -17,7 +17,7 @@ class Etudiant extends Utilisateur {
         ];
     }
 
-    // Implementation de la méthode abstraite (Polymorphisme)
+    
     public function afficherCours() {
         try {
             $sql = "SELECT c.*, u.nom as enseignant_nom 
@@ -35,10 +35,10 @@ class Etudiant extends Utilisateur {
         }
     }
 
-    // Méthode d'inscription à un cours
+    
     public function inscriptionCours($coursId) {
         try {
-            // Vérifier si déjà inscrit
+            
             if ($this->estDejaInscrit($coursId)) {
                 return false;
             }

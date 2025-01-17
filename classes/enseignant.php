@@ -1,18 +1,18 @@
 <?php
 
 class Enseignant extends Utilisateur {
-    // ID spécifique de la table enseignant
+    
     private $enseignant_id;
-    private $specialite;
-    private $biographie;
+
+    
 
     public function __construct($nom, $email, $password) {
-        parent::__construct($nom, $email, $password, 'enseignant');
+        parent::__construct($nom, $email, $password, 'enseignant'); 
         $this->createEnseignantRecord();
     }
 
-    // Crée l'enregistrement dans la table enseignant
-    private function createEnseignantRecord() {
+    
+    private function createEnseignantRecord() { 
         try {
             if ($this->id) {
                 $sql = "INSERT INTO enseignant (utilisateur_id) VALUES (:utilisateur_id)";
@@ -26,7 +26,6 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Afficher les cours de l'enseignant
     public function afficherCours() {
         try {
             $sql = "SELECT c.*, COUNT(i.etudiant_id) as nombre_inscrits 
@@ -44,7 +43,7 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Créer un nouveau cours
+    
     public function creerCours($donnees) {
         try {
             $this->db->beginTransaction();
@@ -76,7 +75,7 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Modifier un cours existant
+    
     public function modifierCours($coursId, $donnees) {
         try {
             if (!$this->estProprietaireCours($coursId)) {
@@ -115,7 +114,7 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Supprimer un cours
+
     public function supprimerCours($coursId) {
         try {
             if (!$this->estProprietaireCours($coursId)) {
@@ -124,17 +123,17 @@ class Enseignant extends Utilisateur {
 
             $this->db->beginTransaction();
 
-            // Supprimer les inscriptions
+            
             $sql1 = "DELETE FROM inscription WHERE cours_id = :cours_id";
             $stmt = $this->db->prepare($sql1);
             $stmt->execute([':cours_id' => $coursId]);
 
-            // Supprimer les tags
+        
             $sql2 = "DELETE FROM cours_tags WHERE cours_id = :cours_id";
             $stmt = $this->db->prepare($sql2);
             $stmt->execute([':cours_id' => $coursId]);
 
-            // Supprimer le cours
+            
             $sql3 = "DELETE FROM cours WHERE id = :id AND enseignant_id = :enseignant_id";
             $stmt = $this->db->prepare($sql3);
             $success = $stmt->execute([
@@ -151,7 +150,7 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Vérifier si l'enseignant est propriétaire du cours
+    
     private function estProprietaireCours($coursId) {
         $sql = "SELECT COUNT(*) FROM cours 
                 WHERE id = :id AND enseignant_id = :enseignant_id";
@@ -165,7 +164,7 @@ class Enseignant extends Utilisateur {
         return $stmt->fetchColumn() > 0;
     }
 
-    // Ajouter des tags à un cours
+    
     private function ajouterTagsCours($coursId, $tags) {
         $sql = "INSERT INTO cours_tags (cours_id, tag_id) VALUES (:cours_id, :tag_id)";
         $stmt = $this->db->prepare($sql);
@@ -178,7 +177,7 @@ class Enseignant extends Utilisateur {
         }
     }
 
-    // Statistiques de l'enseignant
+    
     public function getStatistiques() {
         try {
             $stats = [];
