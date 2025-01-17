@@ -1,5 +1,5 @@
 <?php 
-require_once 'utilisateur.php';
+require_once 'utilisateur.php'; 
 
 class Enseignant extends Utilisateur {
     private $enseignant_id;
