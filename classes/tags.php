@@ -106,6 +106,6 @@ class Tag {
     public function setNom($nom) { $this->nom = $nom; }
 }
 
-$tag1 = new Tag('#mathimatique') ;
- echo $tag1->save() ;
+$tag2 = new Tag('#mathimatique') ;
+ echo $tag2->save() ;
 ?>
