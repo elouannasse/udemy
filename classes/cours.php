@@ -120,8 +120,8 @@ class Cours {
     public function getCategorie() { return $this->categorie; }
     public function getEnseignant() { return $this->enseignant; }
 
-    // Setters
-    public function setTitre($titre) { $this->titre = $titre; }
+    
+    // public function setTitre($titre) { $this->titre = $titre; }
     public function setDescription($description) { $this->description = $description; }
     public function setContenu($contenu) { $this->contenu = $contenu; }
     public function setCategorie(Categorie $categorie) { $this->categorie = $categorie; }
