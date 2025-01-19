@@ -14,23 +14,23 @@ class Utilisateur {
                 "root",  
                 ""      
             );
-            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
         } catch(PDOException $e) {
-            die("Erreur de connexion : " . $e->getMessage());
+            die("Erreur de connexion : " . $e->getMessage()); 
         }
 
-        $this->nom = $nom;
+        $this->nom = $nom; 
         $this->email = $email;
-        $this->password = password_hash($password, PASSWORD_DEFAULT);
+        $this->password = password_hash($password, PASSWORD_DEFAULT); 
         $this->role = $role;
         
-        $this->createUser();
+        $this->createUser(); 
     }
 
-    private function createUser() {
+    private function createUser() { 
         try {
             $sql = "INSERT INTO utilisateur (nom, email, password, role) 
-                    VALUES (:nom, :email, :password, :role)";
+                    VALUES (:nom, :email, :password, :role)"; 
             $stmt = $this->db->prepare($sql);
             if ($stmt->execute([
                 ':nom' => $this->nom,

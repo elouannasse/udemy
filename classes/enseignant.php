@@ -149,11 +149,11 @@ $donnees = [
     'categorie_id' => 1
 ];
 
-$resultat = $enseignant->creerCours($donnees);
+$resultat = $enseignant->creerCours($donnees); 
 if ($resultat) {
-    echo "Cours créé avec succès. ID: " . $resultat;
+    echo "Cours créé avec succès. ID: " . $resultat; 
 } else {
-    echo "Erreur lors de la création du cours";
+    echo "Erreur lors de la création du cours"; 
 }
 
 ?>
