@@ -154,6 +154,6 @@ if ($resultat) {
     echo "Cours créé avec succès. ID: " . $resultat; 
 } else {
     echo "Erreur lors de la création du cours"; 
-}
+} 
 
 ?>
