@@ -8,8 +8,8 @@
     private $contenu;
     private $tags = [];
     private $categorie;
-    private $enseignant;
-    private $db;
+    
+    
 
     public function __construct($titre, $description, $contenu, $categorie, $enseignant) {
         $this->titre = $titre;
