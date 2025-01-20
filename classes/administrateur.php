@@ -10,9 +10,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'administrateur') {
     exit();
 }
 
-$admin = new Administrateur($_SESSION['nom'], $_SESSION['email'], '');
-$stats = $admin->getStatistiquesGlobales();
-$enseignantsEnAttente = $admin->getEnseignantsEnAttente();
+
+
 $tags = $admin->getAllTags();
 ?>
 
