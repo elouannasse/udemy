@@ -11,7 +11,5 @@ class Inscription {
         $this->dateInscription = new DateTime();
     }
 
-    public function getDateInscription() {
-        return $this->dateInscription; 
-    }
+    
 }
