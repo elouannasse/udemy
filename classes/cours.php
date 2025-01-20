@@ -1,6 +1,6 @@
 <?php
 
-class Cours {
+  abstract class Cours {
     // Encapsulation - propriétés privées
     private $id;
     private $titre;
